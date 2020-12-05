@@ -40,19 +40,23 @@
      (validate-yr-range eyr 2020 2030)
      (validate-height hgt)
      (re-find #"^#[0-9a-f]{6}$" hcl)
-     (some #(= ecl %1) '("amb" "blu" "brn" "gry" "grn" "hzl" "oth"))
+     (re-find #"^amb|blu|brn|gry|grn|hzl|oth$" ecl)
      (re-find #"^[0-9]{9}$" pid))))
 
-(defn validate-passports
-  "Validate passports with validator."
+(defn count-valid-passports
+  "Count passports for which validator returns true.
+  Validator is a function which takes the passport as a map."
   [input validator]
-  (->> (str/split input #"\n\n")
-       ;; extract keys as list of alternating key/value pairs
-       (map #(str/split %1 #" |\n|:"))
-       ;; turn alternating list into hash map
-       (map (partial apply hash-map))
-       ;; count valid passports
-       (reduce #(if (validator %2) (inc %1) %1) 0)))
+  
+  (reduce (fn [n passport-text]
+            (if (validator
+                 (apply hash-map
+                        (str/split passport-text
+                                   #" |\n|:")))
+              (inc n)
+              n))
+          0
+          (str/split input #"\n\n")))
 
 ;; Part 1
 (validate-passports input validate-presence)
